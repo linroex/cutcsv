@@ -28,7 +28,6 @@ def main():
                 output_buffer[key].append(line)
             else:
                 if key not in output_files.keys():
-                    print('open file')
                     output_files[key] = open(base_path + '/' + key + '.csv', 'a', encoding='utf8')
                 keys.append(key)
                 output_buffer[key] = [line]
@@ -51,6 +50,7 @@ def main():
             current_page_size += 1
     
     for key in keys:
+        output_files[key].write('\n'.join(output_buffer[key]))
         output_files[key].close()
 
 if __name__ == '__main__':
