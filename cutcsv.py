@@ -4,8 +4,19 @@ from datetime import datetime
 
 import gc
 
-# import timeit
-# import cProfile
+def estimate_lines(fpath, ignore_lines = 0):
+    file_size = path.getsize(fpath)
+    sample_size = 0
+    sampling_time = 10
+
+    fptr = open(fpath, 'rb')
+
+    for _ in range(sampling_time):
+        sample_size += len(fptr.readline())
+
+    fptr.close()
+
+    return int(file_size / (sample_size / sampling_time))
 
 def main():
     target_file_path = argv[1]
