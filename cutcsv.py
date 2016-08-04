@@ -1,6 +1,7 @@
 from os import path, fsync
 from sys import argv
 from datetime import datetime
+from multiprocessing import Process
 
 import gc
 
@@ -66,15 +67,34 @@ def main():
         
         output_files[key].close()
 
+def handle(index, path):
+    pass
+
 if __name__ == '__main__':
     
     gc.enable()
 
     base_path = path.dirname(path.realpath(__file__))
+    multiprocess_mode = True
 
-    # start = datetime.now()
-    main()
-    # print(datetime.now() - start)
+    start = datetime.now()
+
+    if multiprocess_mode:
+        process_number = 5
+        per_process_lines = int(estimate_lines(argv[1]) / process_number)
+
+        process_list = []
+
+        for i in range(process_number):
+            process_list.append(Process(target=handle, args=(i, argv[1], )))
+            process_list[-1].start()
+        
+        for process in process_list:
+            process.join()
+    else:
+        main()
+    
+    print('Speed Time: ', datetime.now() - start)
 
     gc.collect()
 
