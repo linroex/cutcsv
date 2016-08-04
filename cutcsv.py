@@ -17,7 +17,8 @@ def main():
         keys = []
         output_buffer = {}
 
-        max_page_size = 1000
+        max_page_size = 500
+        print("page size: ",max_page_size)
         current_page_size = 0
 
         for line in f:
@@ -26,8 +27,10 @@ def main():
             if key in keys:
                 output_buffer[key].append(line)
             else:
+                if key not in output_files.keys():
+                    print('open file')
+                    output_files[key] = open(base_path + '/' + key + '.csv', 'a', encoding='utf8')
                 keys.append(key)
-                output_files[key] = open(base_path + '/' + key + '.csv', 'a', encoding='utf8')
                 output_buffer[key] = [line]
 
             if current_page_size >= max_page_size:
@@ -53,8 +56,6 @@ def main():
 if __name__ == '__main__':
     
     gc.enable()
-
-    gc.collect()
 
     base_path = path.dirname(path.realpath(__file__))
 
