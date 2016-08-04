@@ -18,7 +18,6 @@ def main():
         output_buffer = {}
 
         max_page_size = 500
-        print("page size: ",max_page_size)
         current_page_size = 0
 
         for line in f:
@@ -37,7 +36,6 @@ def main():
 
                 for key in keys:
                     output_files[key].write('\n'.join(output_buffer[key]))
-                    output_files[key].flush()
 
                 del output_buffer
                 del keys
@@ -51,6 +49,10 @@ def main():
     
     for key in keys:
         output_files[key].write('\n'.join(output_buffer[key]))
+
+        output_files[key].flush()
+        fsync(output_files[key].fileno())
+        
         output_files[key].close()
 
 if __name__ == '__main__':
@@ -59,9 +61,9 @@ if __name__ == '__main__':
 
     base_path = path.dirname(path.realpath(__file__))
 
-    start = datetime.now()
+    # start = datetime.now()
     main()
-    print(datetime.now() - start)
+    # print(datetime.now() - start)
 
     gc.collect()
 
