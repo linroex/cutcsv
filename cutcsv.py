@@ -1,4 +1,4 @@
-from os import path
+from os import path, fsync
 from sys import argv
 from datetime import datetime
 
@@ -18,27 +18,43 @@ def main():
         output_buffer = {}
 
         max_page_size = 1000
+        current_page_size = 0
 
         for line in f:
             key = line.split(',')[decision_column_index]
+
             if key in keys:
                 output_buffer[key].append(line)
             else:
                 keys.append(key)
-                output_files[key] = open(base_path + '/' + key + '.csv', 'w', encoding='utf8')
+                output_files[key] = open(base_path + '/' + key + '.csv', 'a', encoding='utf8')
                 output_buffer[key] = [line]
 
-            if len(output_buffer[key]) >= max_page_size:
-                output_files[key].write('\n'.join(output_buffer[key]))
-                output_buffer[key] = []
-                gc.collect()
+            if current_page_size >= max_page_size:
+                current_page_size = 0
 
+                for key in keys:
+                    output_files[key].write('\n'.join(output_buffer[key]))
+                    output_files[key].flush()
+
+                del output_buffer
+                del keys
+
+                gc.collect()
+                
+                output_buffer = {}
+                keys = []
+                
+            current_page_size += 1
+    
     for key in keys:
         output_files[key].close()
 
 if __name__ == '__main__':
     
     gc.enable()
+
+    gc.collect()
 
     base_path = path.dirname(path.realpath(__file__))
 
