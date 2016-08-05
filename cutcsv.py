@@ -35,7 +35,7 @@ def main():
                 current_page_size = 0
 
                 for key in keys:
-                    output_files[key].write('\n'.join(output_buffer[key]))
+                    output_files[key].write(''.join(output_buffer[key]))
 
                 del output_buffer
                 del keys
@@ -48,7 +48,7 @@ def main():
             current_page_size += 1
     
     for key in keys:
-        output_files[key].write('\n'.join(output_buffer[key]))
+        output_files[key].write(''.join(output_buffer[key]))
 
         output_files[key].flush()
         fsync(output_files[key].fileno())
@@ -61,9 +61,9 @@ if __name__ == '__main__':
 
     base_path = path.dirname(path.realpath(__file__))
 
-    # start = datetime.now()
+    start = datetime.now()
     main()
-    # print(datetime.now() - start)
+    print(datetime.now() - start)
 
     gc.collect()
 
