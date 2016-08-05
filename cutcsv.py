@@ -6,10 +6,23 @@ from math import floor, ceil
 
 import gc
 
+def count_offset(fpath, number):
+    each_size = int(path.getsize(fpath) / number)
+    offsets = []
+
+    with open(fpath, 'rb') as fptr:
+        for i in range(number):
+            fptr.seek(each_size * i)
+            if i != 0:
+                fptr.readline()
+            offsets.append(fptr.tell())
+    
+    return offsets
+
 def handle(index, process_bytes, path):
-    with open(path, 'r', encoding='utf8') as f:
-        f.seek(int(index * process_bytes))
-        f.readline()
+    with open(path, 'r', encoding='utf8') as fptr:
+        fptr.seek(int(index * process_bytes))
+        fptr.readline()
 
         max_page_size = 1000
         current_page_size = 0
@@ -17,7 +30,7 @@ def handle(index, process_bytes, path):
         keys = []
 
         for i in range(int(process_bytes)):
-            line = f.readline()
+            line = fptr.readline()
 
             key = line.split(',')[decision_column_index]
 
@@ -45,7 +58,7 @@ def handle(index, process_bytes, path):
                 
             current_page_size += 1
 
-            if f.tell() >= process_bytes*(index+1):
+            if fptr.tell() >= process_bytes*(index+1):
                 for key in keys:
                     output_files[key].write(''.join(output_buffer[key]))
                 return True
@@ -65,6 +78,8 @@ if __name__ == '__main__':
     process_bytes = path.getsize(target_file_path) / process_number
 
     start = datetime.now()
+
+    offsets = count_offset(target_file_path, process_number)
 
     for i in range(process_number):
         process_list.append(Process(target=handle, args=(i, process_bytes, target_file_path, )))
