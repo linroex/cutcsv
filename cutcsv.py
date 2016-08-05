@@ -2,23 +2,23 @@ from os import path, fsync
 from sys import argv
 from datetime import datetime
 from multiprocessing import Process
-from math import floor, ceil
+from math import ceil
 
 import gc
 
 def count_offset(fpath, number):
-    file_size = int(path.getsize(fpath))
-    each_size = file_size / number
-    offsets = []
+    file_size = path.getsize(fpath)
+    each_size = ceil(file_size / number)
+    offsets = [0]
 
-    with open(fpath, 'r', encoding='utf8') as fptr:
-        for i in range(number):
-            fptr.seek(each_size * i)
-            if i != 0:
-                fptr.readline()
+    with open(fpath, 'rb') as fptr:
+        for i in range(1,number):
+            fptr.seek(each_size, 1)
+            fptr.readline()
             offsets.append(fptr.tell())
     
     offsets.append(file_size)
+    print(offsets)
 
     return offsets
 
@@ -32,17 +32,15 @@ def handle(current_offset, next_offset, path):
         output_buffer = {}
         keys = []
 
-        for i in range(next_offset):
-            line = fptr.readline()
-            try:
-                key = line.split(',')[decision_column_index]
-            except IndexError:
-                print(fptr.tell(), next_offset)
-
-            if (fptr.tell() > next_offset) or line == '':
+        while True:
+            if fptr.tell() >= next_offset:
+                print(current_offset, fptr.tell(), next_offset)
                 for f_key in keys:
                     output_files[f_key].write(''.join(output_buffer[f_key]))
                 return True
+
+            line = fptr.readline()
+            key = line.split(',')[decision_column_index]
 
             if key in keys:
                 output_buffer[key].append(line)
@@ -55,8 +53,8 @@ def handle(current_offset, next_offset, path):
             if current_page_size >= max_page_size:
                 current_page_size = 0
 
-                for key in keys:
-                    output_files[key].write(''.join(output_buffer[key]))
+                for f_key in keys:
+                    output_files[f_key].write(''.join(output_buffer[f_key]))
 
                 del output_buffer
                 del keys
@@ -68,19 +66,16 @@ def handle(current_offset, next_offset, path):
                 
             current_page_size += 1
 
-            
-        
 if __name__ == '__main__':
     gc.enable()
 
     base_path = path.dirname(path.realpath(__file__))
 
     output_files = {}
-
     target_file_path = argv[1]
     decision_column_index = int(argv[2])
     
-    process_number = 2
+    process_number = 4
     process_list = []
 
     offsets = count_offset(target_file_path, process_number)
@@ -89,7 +84,6 @@ if __name__ == '__main__':
 
     for i in range(process_number):
         process_list.append(Process(target=handle, args=(offsets[i], offsets[i + 1], target_file_path)))
-
         process_list[i].start()
     
     for process in process_list:
