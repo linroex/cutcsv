@@ -7,7 +7,8 @@ from math import floor, ceil
 import gc
 
 def count_offset(fpath, number):
-    each_size = int(path.getsize(fpath) / number)
+    file_size = int(path.getsize(fpath))
+    each_size = file_size / number
     offsets = []
 
     with open(fpath, 'r', encoding='utf8') as fptr:
@@ -17,6 +18,8 @@ def count_offset(fpath, number):
                 fptr.readline()
             offsets.append(fptr.tell())
     
+    offsets.append(file_size)
+
     return offsets
 
 def handle(current_offset, next_offset, path):
@@ -31,8 +34,15 @@ def handle(current_offset, next_offset, path):
 
         for i in range(next_offset):
             line = fptr.readline()
+            try:
+                key = line.split(',')[decision_column_index]
+            except IndexError:
+                print(fptr.tell(), next_offset)
 
-            key = line.split(',')[decision_column_index]
+            if (fptr.tell() > next_offset) or line == '':
+                for f_key in keys:
+                    output_files[f_key].write(''.join(output_buffer[f_key]))
+                return True
 
             if key in keys:
                 output_buffer[key].append(line)
@@ -58,11 +68,7 @@ def handle(current_offset, next_offset, path):
                 
             current_page_size += 1
 
-            if fptr.tell() >= next_offset:
-                print(current_offset, fptr.tell())
-                for key in keys:
-                    output_files[key].write(''.join(output_buffer[key]))
-                return True
+            
         
 if __name__ == '__main__':
     gc.enable()
@@ -74,7 +80,7 @@ if __name__ == '__main__':
     target_file_path = argv[1]
     decision_column_index = int(argv[2])
     
-    process_number = 5
+    process_number = 2
     process_list = []
 
     offsets = count_offset(target_file_path, process_number)
@@ -82,10 +88,8 @@ if __name__ == '__main__':
     start = datetime.now()
 
     for i in range(process_number):
-        if i != process_number - 1:
-            process_list.append(Process(target=handle, args=(offsets[i], offsets[i + 1], target_file_path)))
-        else:
-            process_list.append(Process(target=handle, args=(offsets[i], path.getsize(target_file_path), target_file_path)))
+        process_list.append(Process(target=handle, args=(offsets[i], offsets[i + 1], target_file_path)))
+
         process_list[i].start()
     
     for process in process_list:
