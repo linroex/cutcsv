@@ -2,37 +2,23 @@ from os import path, fsync
 from sys import argv
 from datetime import datetime
 from multiprocessing import Process
+from math import floor, ceil
 
 import gc
 
-def estimate_lines(fpath, ignore_lines = 0):
-    file_size = path.getsize(fpath)
-    sample_size = 0
-    sampling_time = 10
+def handle(index, process_bytes, path):
+    with open(path, 'r', encoding='utf8') as f:
+        f.seek(int(index * process_bytes))
+        f.readline()
 
-    fptr = open(fpath, 'rb')
-
-    for _ in range(sampling_time):
-        sample_size += len(fptr.readline())
-
-    fptr.close()
-
-    return int(file_size / (sample_size / sampling_time))
-
-def main():
-    target_file_path = argv[1]
-    decision_column_index = int(argv[2])
-
-    output_files = {}
-
-    with open(target_file_path, 'r', encoding='utf8') as f:
-        keys = []
-        output_buffer = {}
-
-        max_page_size = 500
+        max_page_size = 1000
         current_page_size = 0
+        output_buffer = {}
+        keys = []
 
-        for line in f:
+        for i in range(int(process_bytes)):
+            line = f.readline()
+
             key = line.split(',')[decision_column_index]
 
             if key in keys:
@@ -47,7 +33,7 @@ def main():
                 current_page_size = 0
 
                 for key in keys:
-                    output_files[key].write('\n'.join(output_buffer[key]))
+                    output_files[key].write(''.join(output_buffer[key]))
 
                 del output_buffer
                 del keys
@@ -58,45 +44,41 @@ def main():
                 keys = []
                 
             current_page_size += 1
-    
-    for key in keys:
-        output_files[key].write('\n'.join(output_buffer[key]))
 
-        output_files[key].flush()
-        fsync(output_files[key].fileno())
+            if f.tell() >= process_bytes*(index+1):
+                for key in keys:
+                    output_files[key].write(''.join(output_buffer[key]))
+                return True
         
-        output_files[key].close()
-
-def handle(index, path):
-    pass
-
 if __name__ == '__main__':
-    
     gc.enable()
 
     base_path = path.dirname(path.realpath(__file__))
-    multiprocess_mode = True
+
+    output_files = {}
+
+    target_file_path = argv[1]
+    decision_column_index = int(argv[2])
+
+    process_number = 5
+    process_list = []
+    process_bytes = path.getsize(target_file_path) / process_number
 
     start = datetime.now()
 
-    if multiprocess_mode:
-        process_number = 5
-        per_process_lines = int(estimate_lines(argv[1]) / process_number)
+    for i in range(process_number):
+        process_list.append(Process(target=handle, args=(i, process_bytes, target_file_path, )))
+        process_list[i].start()
+    
+    for process in process_list:
+        process.join()
 
-        process_list = []
-
-        for i in range(process_number):
-            process_list.append(Process(target=handle, args=(i, argv[1], )))
-            process_list[-1].start()
+    for fptr in output_files:
+        fptr.flush()
+        fsync(fptr.fileno())
         
-        for process in process_list:
-            process.join()
-    else:
-        main()
+        output_files[key].close()
     
     print('Speed Time: ', datetime.now() - start)
 
     gc.collect()
-
-    # print(timeit.timeit(main, number=6))
-    # cProfile.run('main()')
