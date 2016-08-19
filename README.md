@@ -18,7 +18,7 @@ Arieh,Airbnb
 
 python3 cutcsv.py {filepath} {index}
 
-# 預計未來
+# 未來
 
 - 多執行緒處理，並解決 IO 堵塞問題
     - File Lock
@@ -29,3 +29,4 @@ python3 cutcsv.py {filepath} {index}
     - 不同環境、檔案大小的效能測試報告
 - 已排序資料的處理，整批搬運
 - 輸出處理紀錄
+- 支援 pip / apt-get 直接安裝，並同時支援 Python 2/3
