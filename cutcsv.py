@@ -1,11 +1,22 @@
+# Copyright 2016 HSICHELIN of copyright owner
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from os import path, fsync
 from sys import argv
 from datetime import datetime
 
 import gc
-
-# import timeit
-# import cProfile
 
 def main():
     target_file_path = argv[1]
@@ -57,15 +68,6 @@ def main():
 
 if __name__ == '__main__':
     
-    gc.enable()
-
     base_path = path.dirname(path.realpath(__file__))
 
-    start = datetime.now()
     main()
-    print(datetime.now() - start)
-
-    gc.collect()
-
-    # print(timeit.timeit(main, number=6))
-    # cProfile.run('main()')
